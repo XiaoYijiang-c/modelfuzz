@@ -8,6 +8,12 @@ import os
 import time
 from multiprocessing import Process,Queue
 
+
+'''
+这里有一个问题还没解决,dlfuzz对不同的模型写了不同的preprocess函数,
+需要改成通用的，以保证可以作用于各种不同的模型,
+或者让User提供.
+'''
 class DLFuzzClass():
     def __init__(self, shape, filePath, codeFileName, loadModelFunctionName):
         self.input_tensor = Input(shape=shape)
@@ -155,10 +161,7 @@ class DLFuzzClass():
         q.put({"FLAG":True})
             
     
-def createModule(shape,codeFileName,loadModelFunctionName,seedPath,neuron_select_strategy,threshold,neuron_to_cover_num,subdir,iteration_times,ID,q,layer_name):
-    item = DLFuzzClass(shape,codeFileName,loadModelFunctionName)
-    item.fuzzing_init(seedPath,neuron_select_strategy,threshold,neuron_to_cover_num,subdir,iteration_times)
-    item.fuzzing_run(ID,q,layer_name)
+
 
 
 if __name__ == "__main__":

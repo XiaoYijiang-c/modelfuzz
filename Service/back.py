@@ -6,26 +6,29 @@ import os
 from utils_tmp import get_signature
 import zipfile
  
-# # 将目录的文件复制到指定目录
-# def copy_demo(src_dir, dst_dir):
-#     if not os.path.exists(dst_dir):
-#         os.makedirs(dst_dir)
-#     if os.path.exists(src_dir):
-#         for file in os.listdir(src_dir):
-#             file_path = os.path.join(src_dir, file)
-#             dst_path = os.path.join(dst_dir, file)
-#             if os.path.isfile(os.path.join(src_dir, file)):
-#                 copyfile(file_path, dst_path)
-#             else:
-#                 copy_demo(file_path, dst_path)
-
 
 app = Flask(__name__)
 
 q_list = {}
 
-        
+       
 def createModule(shape,filePath,codeFileName,loadModelFunctionName,seedPath,neuron_select_strategy,threshold,neuron_to_cover_num,subdir,iteration_times,ID,q,layer_name):
+    '''
+    :param shape: Picture input shape
+    :param filePath: The model file saved path 
+    :param codeFileName: The file's name user submit
+    :param loadModelFunctionName: The function name which build model
+    :param seedPath: The seed file saved path 
+    :param neuron_select_strategy: Fuzz param
+    :param threshold: Fuzz param
+    :param neuron_to_cover_num: Fuzz param
+    :param subdir: Save those files path (depending on the code below)
+    :param iteration_times: Fuzz param
+    :param ID: identify different User
+    :param q: the message queue
+    :param layer_name: The layer name before active layer
+    This function will process in subprocess, and can use queue communitate main process.
+    '''
     item = DLFuzzClass(shape,filePath,codeFileName,loadModelFunctionName)
     item.fuzzing_init(seedPath,neuron_select_strategy,threshold,neuron_to_cover_num,subdir,iteration_times)
     item.fuzzing_run(ID,q,layer_name)
@@ -34,6 +37,7 @@ def createModule(shape,filePath,codeFileName,loadModelFunctionName,seedPath,neur
 def get_argv():
     if request.method == 'POST':
         # python gen_diff.py [2] 0.5 5 0602 5 model1
+        # get form 
         neuron_select_strategy = request.form['strategy']  # [2]
         threshold = float(request.form['threshold'])  # 0.5
         neuron_to_cover_num = int(request.form['neuron_to_cover_num'])  # 5
@@ -42,13 +46,14 @@ def get_argv():
         shape = tuple(eval(request.form['shape']))
         load_module_function_name = request.form['load_module_function_name']
         layer_name = request.form['layer_name']
-        q_list[ID] = Queue(5)
-        
         code_F = request.files['codeFile']
         model_F = request.files['modelFile']
         seed_F = request.files['seed']
 
+        # message queue init 
+        q_list[ID] = Queue(5)
         
+        # handle and save file
         file_path = "./model_save/" + ID +'_'+ str(get_signature())
         if not os.path.exists(file_path):
             os.makedirs(file_path)
@@ -67,6 +72,8 @@ def get_argv():
         for file in f.namelist():
             f.extract(file,file_path)               # 解压位置
         f.close()
+
+        # process start
         p1 = Process(target=createModule, args=(shape,file_path,code_filename,load_module_function_name,file_path+'/'+seed_filename,neuron_select_strategy,threshold,neuron_to_cover_num,file_path+'/result',iteration_times,ID,q_list[ID],layer_name))
         p1.start()
         # p1.join()
@@ -79,6 +86,10 @@ def get_argv():
 
 @app.route('/request', methods=['GET'])
 def get_message():
+    '''
+    This function will get message from message queue 
+    and support the web get data by polling
+    '''
     get_data = request.args.to_dict()
     ID = get_data.get("ID")
     if q_list[ID].qsize()>0:
