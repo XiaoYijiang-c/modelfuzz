@@ -9,20 +9,13 @@ import sys
 import os
 import time
 
-from Model1 import Model1
-from Model2 import Model2
-from Model3 import Model3
 
-def load_data(path="../MNIST_data/mnist.npz"):
-    f = np.load(path)
-    x_train, y_train = f['x_train'], f['y_train']
-    x_test, y_test = f['x_test'], f['y_test']
-    f.close()
-    return (x_train, y_train), (x_test, y_test)
+
+
+
 
 # input image dimensions
 img_rows, img_cols = 28, 28
-
 input_shape = (img_rows, img_cols, 1)
 
 # define input tensor as a placeholder
@@ -85,7 +78,7 @@ adversial_num = 0
 
 total_perturb_adversial = 0
 
-for i in xrange(img_num):
+for i in range(img_num):
 
     start_time = time.clock()
 
@@ -95,7 +88,7 @@ for i in xrange(img_num):
 
     img_name = img_paths[i].split('.')[0]
 
-    mannual_label = int(img_name.split('_')[1])
+    # mannual_label = int(img_name.split('_')[1])
 
     print(img_path)
 
@@ -159,7 +152,7 @@ for i in xrange(img_num):
         iterate = K.function([input_tensor], grads_tensor_list)
 
         # we run gradient ascent for 3 steps
-        for iters in xrange(iteration_times):
+        for iters in range(iteration_times):
 
             loss_neuron_list = iterate([gen_img])
 
