@@ -6,9 +6,10 @@ import os
 from utils_tmp import get_signature
 import zipfile
  
+from flask_cors import CORS
 
-app = Flask(__name__)
-
+app = Flask(__name__,static_folder='model_save', static_host=None)
+CORS(app, supports_credentials=True)
 q_list = {}
 
        
@@ -38,6 +39,7 @@ def get_argv():
     if request.method == 'POST':
         # python gen_diff.py [2] 0.5 5 0602 5 model1
         # get form 
+        print('accept...')
         neuron_select_strategy = request.form['strategy']  # [2]
         threshold = float(request.form['threshold'])  # 0.5
         neuron_to_cover_num = int(request.form['neuron_to_cover_num'])  # 5
@@ -46,10 +48,11 @@ def get_argv():
         shape = tuple(eval(request.form['shape']))
         load_module_function_name = request.form['load_module_function_name']
         layer_name = request.form['layer_name']
+        print(layer_name)
         code_F = request.files['codeFile']
         model_F = request.files['modelFile']
         seed_F = request.files['seed']
-
+        print(ID)
         # message queue init 
         q_list[ID] = Queue(5)
         
@@ -72,7 +75,7 @@ def get_argv():
         for file in f.namelist():
             f.extract(file,file_path)               # 解压位置
         f.close()
-
+        print('start...')
         # process start
         p1 = Process(target=createModule, args=(shape,file_path,code_filename,load_module_function_name,file_path+'/'+seed_filename,neuron_select_strategy,threshold,neuron_to_cover_num,file_path+'/result',iteration_times,ID,q_list[ID],layer_name))
         p1.start()

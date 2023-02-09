@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from keras.layers import Input
 from scipy.misc import imsave
-from utils_tmp import init_coverage_times,init_coverage_value
+from utils_tmp import *
 import sys
 import os
 import time
@@ -16,8 +16,12 @@ from multiprocessing import Process,Queue
 '''
 class DLFuzzClass():
     def __init__(self, shape, filePath, codeFileName, loadModelFunctionName):
+        self.saveImgList = []
+        self.neuronsNumberList = []
+        self.neuronsPercentageList = []
+
         self.input_tensor = Input(shape=shape)
-        codeFileName="model_save.luojiale_241493798414."+codeFileName
+        codeFileName="model_save."+ filePath.split('/')[-1]+"."+codeFileName
         print(codeFileName)
         module = __import__(codeFileName,fromlist=(filePath,))
         modelFunction = getattr(module,loadModelFunctionName)
@@ -142,6 +146,8 @@ class DLFuzzClass():
                         save_img = self.save_dir + img_name + '_' + str(get_signature()) + '.png'
                         imsave(save_img, gen_img_deprocessed)
                         self.adversial_num += 1
+                        self.saveImgList.append(save_img)   
+
             # q.put('4')
             end_time = time.clock()
             # print('covered neurons percentage %d neurons %.3f'
@@ -151,12 +157,17 @@ class DLFuzzClass():
             self.total_time += duration
             if q.qsize() == 1:
                 q.get()
+            self.neuronsNumberList.append(len(self.model_layer_times2))
+            self.neuronsPercentageList.append(neuron_covered(self.model_layer_times2)[2])
             q.put({
                 "ID":ID,
                 "image path":img_path,
                 "covered neurons percentage":len(self.model_layer_times2),
                 "neurons":neuron_covered(self.model_layer_times2)[2],
-                "FLAG":False
+                "FLAG":False,
+                "neuronsNumberList":self.neuronsNumberList,
+                "neuronsPercentageList":self.neuronsPercentageList,
+                "imgList":self.saveImgList
             })
         q.put({"FLAG":True})
             
